@@ -1,0 +1,102 @@
+# Per-cohort DADA2 parameters.
+#
+# Every value below is measured, not assumed:
+#   trimLeft  <- analysis/modules/01-preprocess/scripts/detect_primer_residue.py
+#                (fraction of reads beginning with a known 16S primer)
+#   truncLen  <- analysis/modules/01-preprocess/scripts/profile_reads.py
+#                (first cycle whose mean Phred falls below Q20), then reduced by
+#                trimLeft, because truncLen counts from the raw read start.
+#   single_end / ion_torrent <- measured read length distribution + file layout.
+#
+# maxEE is measured, not inherited: Ion Torrent carries higher per-base error, so
+# maxEE = 2 (the Illumina default) discards half its reads. Calibration on 2 runs
+# gave retention 47.5% (maxEE 2) -> 63.2% (3) -> 72.4% (4) with ASV only +7.2% /
+# +9.4%, i.e. the recovered reads are redundant copies, not new diversity.
+#
+# pool. All six cohorts were finally run with pool = FALSE. Provenance matters here,
+# because this file no longer reflects a single decision:
+#   * 2026-10-22: pool was first set to "pseudo" for every cohort, then PRJNA1415359
+#     stalled in the post-denoising step (2h50m on ~3 cores). The decision recorded at
+#     that point was "high-depth MiSeq -> FALSE; the Ion Torrent cohort keeps pseudo".
+#   * 2026-10-23: when PRJNA866676 was actually run, the single-end script was written
+#     with pool = FALSE for "consistency with the other cohorts", which overrode that
+#     intent. The run that produced the analysed data used FALSE (run_status.json).
+# So the two decisions this file has witnessed contradict each other, and the code --
+# not this comment -- is authoritative. Both run_dada2_paired.R and
+# run_dada2_single_end.R HARDCODE pool = FALSE and never read this key; only the older
+# run_dada2.R read it. Treat `pool:` below as documentation of what ran, not as input.
+#
+# IMPORTANT: trimming the primer shortens the usable read, so truncLen must be
+# reduced by the same amount. Getting this wrong silently lowers the retention
+# rate: the first pilot on PRJNA1415359 with trimLeft = 0 kept only 57% of reads
+# at filtering, because 85% of its R1 reads still carried the 341F primer.
+
+cohorts:
+  PRJNA1415359:
+    pool: false
+    maxEE: 2          # Illumina default
+    platform: "Illumina MiSeq"
+    single_end: false
+    trimLeft: [17, 21]        # 341F at 5' of R1 (85%), 806R at 5' of R2 (94%)
+    truncLen: [280, 225]      # 301 bp reads: 301-17=284 and 250-21=229, minus margin
+    region: "V3-V4"
+    note: "2x301, 129505 reads/run; primary cohort: 29 patients with tumour + normal + preop saliva"
+
+  PRJNA1415268:
+    pool: false
+    maxEE: 2          # Illumina default
+    platform: "Illumina MiSeq"
+    single_end: false
+    trimLeft: [17, 21]        # 341F at 5' of R1 (81%), 806R at 5' of R2 (76%)
+    truncLen: [230, 225]      # quality drops below Q20 at R1 250 / R2 249
+    region: "V3-V4"
+    note: "2x301, 112553 reads/run; 47 tumour/normal pairs (Seoul)"
+
+  PRJNA666746:
+    pool: false
+    maxEE: 2          # Illumina default
+    platform: "Illumina MiSeq"
+    single_end: false
+    trimLeft: [0, 0]          # primer at 5' in only 34% (R1) / 47% (R2): AMBIGUOUS
+    truncLen: [240, 240]      # quality drops below Q20 at 250/250 on 251 bp reads
+    region: "V3-V4"
+    ambiguous_primer: true
+    downsample: 100000       # ~600k reads/sample -> ~240k unique sequences (15x
+                             # PRJNA1415359). The full run burned 28.8 CPU-hours without
+                             # passing sample 16 of 100. Genus-level relative abundance does
+                             # not need that depth, so reads are capped after filtering.
+    note: "2x251, 967658 reads/run; 50 tumour/normal pairs (India). Partial primer
+           residue: trimming would discard the first 17-21 bp of the ~55% of reads
+           that are already clean. Left untrimmed and flagged; test both settings
+           on the full cohort before locking."
+
+  PRJNA597251:
+    pool: false
+    maxEE: 2          # Illumina default
+    platform: "Illumina HiSeq 2500"
+    single_end: false
+    trimLeft: [0, 0]          # already trimmed (0% primer at 5')
+    truncLen: [287, 273]      # quality drops below Q20 at R1 297 / R2 283
+    region: "V3-V4"
+    note: "2x300, 42602 reads/run; 24 pairs (Qingdao)"
+
+  PRJNA412445:
+    pool: false       # run_dada2_paired.R hardcodes pool=FALSE; "pseudo" here was stale
+    maxEE: 2          # Illumina default
+    platform: "Illumina MiSeq"
+    single_end: false
+    trimLeft: [0, 0]          # already trimmed
+    truncLen: [245, 240]      # ACTUAL run (run_status.json); 236/236 was a pre-run guess
+    region: "V3-V4"
+    note: "2x251, 23428 reads/run; ONLY cohort with subgingival plaque; demoted to sensitivity analysis by S3 (low depth)"
+
+  PRJNA866676:
+    pool: false       # run_dada2_single_end.R hardcodes pool=FALSE; "pseudo" here was stale
+    maxEE: 3          # CALIBRATED: retention 47.5%->63.2%, ASV +7.2%; see results/tables/dada2_maxee_calibration.csv
+    platform: "Ion Torrent S5 XL"
+    single_end: true
+    trimLeft: 0               # already trimmed (0% primer at 5')
+    truncLen: 350             # ACTUAL run (run_status.json). Reads are 370-460 bp; 350 is the reads
+    region: "V3-V4"
+    ion_torrent: true
+    note: "single-end, 428 bp mean; 6 niches incl. cancer surface and tongue coat"

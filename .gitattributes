@@ -1,0 +1,5 @@
+# keep the analysis scripts byte-identical on every platform
+* text=auto eol=lf
+*.png binary
+*.tif binary
+*.gz binary
