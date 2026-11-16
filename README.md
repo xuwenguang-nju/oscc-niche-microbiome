@@ -1,5 +1,7 @@
 # Analysis code for the intratumoral bacterial community study
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24280493.svg)](https://doi.org/10.5281/zenodo.24280493)
+
 This repository contains the code that produces every table and figure in the manuscript. It is
 released so that the reported numbers can be checked rather than taken on trust.
 
@@ -58,5 +60,11 @@ DADA2 inference parameters per cohort, including the record of a change made dur
 
 ## Citation
 
-Please cite the manuscript and the Zenodo archive of this repository rather than the repository URL
-alone. The DOI is in the manuscript's Data Availability statement.
+Please cite the manuscript and the archived records rather than the repository URL alone:
+
+- **Code** (this repository, version 1.0.0): https://doi.org/10.5281/zenodo.24280494
+  Concept DOI for all versions: https://doi.org/10.5281/zenodo.24280493
+- **Processed data**: https://doi.org/10.5281/zenodo.24280229
+
+The version DOI above identifies exactly the code in release `v1.0.0`; the concept DOI always
+resolves to the most recent version.
